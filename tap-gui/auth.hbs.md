@@ -63,7 +63,11 @@ Configure a supported authentication provider or a custom OpenID Connect (OIDC) 
   These values are read from the `metadataUrl` file by Tanzu Application Platform GUI,
   so you must not specify these values explicitly in the earlier authentication configuration.
 
-  You also need to provide a piece of information to your identity provider, the
+  Part of the [OAuth 2.0
+  specification](https://www.rfc-editor.org/rfc/rfc6749#section-3.1.2) is that
+  authorization servers (identity providers) need to be able to redirect a user
+  back to the application that started the authentication flow. As such, you
+  also need to provide a piece of information to your identity provider, the
   redirect URI, sometimes also called redirect URL or callback URL/URI, of the
   TAP GUI instance. This takes the form of
   ```
