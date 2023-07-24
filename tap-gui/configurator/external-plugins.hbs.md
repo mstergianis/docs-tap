@@ -8,7 +8,16 @@ This topic tells you how to add external plug-ins to Tanzu Developer Portal
 As mentioned in [Build your Customized Tanzu Developer Portal with Configurator](building.hbs.md#prereqs),
 to use any type of external plug-in, ensure that it is in an npm registry. This registry can be your
 own private registry or a plug-in registry if you intend to use a third-party or community plug-in.
+# How to Add a plugin to your Tanzu Developer Portal
 
+In this section, we will walk you through the steps required to add a custom or community Backstage plugin to your Tanzu Developer Portal. As an example, we are using Backstage's TechInsights plugin.
+
+The steps include:
+1. Extracting the contents of the builder image
+1. Running a local verdaccio server for inner loop development
+1. Creating your plugin wrapper
+1. Adding your plugin wrapper to your portal configuration file
+1. Issuing your portal configuration file to your Tanzu Application Platform cluster
 > **Important** Tanzu Application Platform plug-ins cannot be removed from customized portals.
 > However, if you decide you want to hide them, you can use the
 > [runtime configuration](concepts.hbs.md#runtime) options in your `tap-values.yaml` file.
@@ -47,7 +56,7 @@ kind: ImagesLock
 We want to download the image specified by the `image` key.
 
 ```shell
-$ imgpkg -i REGISTRY/REPOSITORY@sha256:0b03767e0526803c055d080a7d378df9adaeaa7cff0ff5af23a2debe668f20e3 -o builder
+$ imgpkg pull -i REGISTRY/REPOSITORY@sha256:0b03767e0526803c055d080a7d378df9adaeaa7cff0ff5af23a2debe668f20e3 -o builder
 ```
 
 Will output the filesystem of the builder image to a directory called `builder` on your local machine.
@@ -105,11 +114,11 @@ $ ./node_modules/verdaccio/bin/verdaccio --config offline_config.yaml
 ## Creating your plugin wrappers
 
 With your verdaccio server running, you should have access to the requisite
-libraries the Tanzu Developer Portal team developed. The only requirement is
+libraries of the Tanzu Developer Portal. The only requirement is
 that you will have to tell your local machine to fetch its dependencies through
 verdaccio.
 
-In this example we will be creating two plugin wrappers one for
+We are going to use Backstage's TechInsights plugin as an example. This plugin is broken down into the frontend and backend, so we will be creating two plugin wrappers: one for
 [`tech-insights`](https://github.com/backstage/backstage/tree/master/plugins/tech-insights)
 and one for
 [`tech-insights-backend`](https://github.com/backstage/backstage/tree/master/plugins/tech-insights-backend).
@@ -257,7 +266,7 @@ $ yarn install
 
 Which will install the backstage cli and a few other dependencies.
 
-### tech-insights frontend wrapper
+### Tech Insights frontend wrapper
 
 Next you can use the backstage cli to create your plugin wrapper for `tech-insights`
 frontend. For this example, we'll be using the command
@@ -502,7 +511,7 @@ symbol with the name `plugin`.
 $ yarn install && yarn tsc && yarn build
 ```
 
-### tech-insights backend wrapper
+### Tech Insights backend wrapper
 
 <!-- skipping for now because it's getting late on a friday and we're getting tired -->
 
@@ -585,7 +594,7 @@ info Not revoking login token, specified via config file.
 Done in 2.76s.
 ```
 
-## Adding your plugin wrapper to your TDP configuration file
+## Adding your plugin wrapper to your portal configuration file
 
 ```yaml
 app:
@@ -600,7 +609,7 @@ backend:
       version: '^1.6.0-release-1.6.x.1'
 ```
 
-## Issuing your TDP configuration file to your TAP cluster for building
+## Issuing your portal configuration file to your Tanzu Application Platform cluster for building
 
 If you're using verdaccio for your publishing you'll need to make sure your
 cluster can access your verdaccio server. This tutorial will not go in to how to
