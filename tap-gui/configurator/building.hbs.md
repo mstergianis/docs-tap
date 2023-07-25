@@ -67,12 +67,12 @@ To prepare your Configurator configuration file:
     app:
       plugins:
         - name: '@tpb/plugin-hello-world'
-        - name: '@tpb/plugin-gitlab-loblaw'
-          version: '^0.0.18'
+          version: '^1.6.0-release-1.6.x.1'
     backend:
       plugins:
         - name: '@tpb/plugin-hello-world-backend'
-    ```
+          version: '^1.6.0-release-1.6.x.1'
+      ```
 
 2. Encode the file in base64, to later embed `tpb-config.yaml` in the workload definition file, by
    running:
@@ -102,8 +102,7 @@ spec:
       - name: TPB_CONFIG
         value: /tmp/tpb-config.yaml
       - name: TPB_CONFIG_STRING
-        value:
-        ENCODED-TDP-CONFIG-VALUE
+        value: ENCODED-TDP-CONFIG-VALUE
 
   source:
     image: TDP-IMAGE-LOCATION
@@ -140,9 +139,7 @@ spec:
       - name: TPB_CONFIG
         value: /tmp/tpb-config.yaml
       - name: TPB_CONFIG_STRING
-        value:
-        YXBwOgogIHBsdWdpbnM6CiAgICAtIG5hbWU6ICdAdHBiL3BsdWdpbi1oZWxsby13b3JsZCcKYmFja2VuZDoKICBwbHVnaW5zOgogI
-        CAgLSBuYW1lOiAnQHRwYi9wbHVnaW4taGVsbG8td29ybGQtYmFja2VuZCcK
+        value: YXBwOgogIHBsdWdpbnM6CiAgICAtIG5hbWU6ICdAdHBiL3BsdWdpbi1oZWxsby13b3JsZCcKICAgICAgdmVyc2lvbjogJ14xLjYuMC1yZWxlYXNlLTEuNi54LjEnCmJhY2tlbmQ6CiAgcGx1Z2luczoKICAgIC0gbmFtZTogJ0B0cGIvcGx1Z2luLWhlbGxvLXdvcmxkLWJhY2tlbmQnCiAgICAgIHZlcnNpb246ICdeMS42LjAtcmVsZWFzZS0xLjYueC4xJwo=
   source:
     image: TDP-IMAGE-LOCATION
     subPath: builder
