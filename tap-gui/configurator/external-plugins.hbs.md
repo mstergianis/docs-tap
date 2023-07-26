@@ -13,7 +13,7 @@ own private registry or a plug-in registry if you intend to use a third-party or
 In this section, we will walk you through the steps required to add a custom or community Backstage plugin to your Tanzu Developer Portal. As an example, we are using Backstage's TechInsights plugin.
 
 The steps include:
-1. Extracting the contents of the builder image
+1. Extracting the contents of the configurator image
 1. Running a local verdaccio server for inner loop development
 1. Creating your plugin wrapper
 1. Adding your plugin wrapper to your portal configuration file
@@ -22,9 +22,9 @@ The steps include:
 > However, if you decide you want to hide them, you can use the
 > [runtime configuration](concepts.hbs.md#runtime) options in your `tap-values.yaml` file.
 
-## Extracting the contents of the builder image
+## Extracting the contents of the configurator image
 
-Find the location of the builder image by querying your TAP cluster
+Find the location of the configurator image by querying your TAP cluster
 
 ```shell
 $ kubectl -n tap-install get packages tpb.tanzu.vmware.com.0.1.2 -o jsonpath={.spec.template.spec.fetch[0].imgpkgBundle.image}
@@ -34,8 +34,8 @@ $ kubectl -n tap-install get packages tpb.tanzu.vmware.com.0.1.2 -o jsonpath={.s
 REGISTRY/REPOSITORY@sha256:458d9727b6f77ea2fadd2ee597885419e555e7b74057bd654f7d4eee8f006641
 ```
 
-This is a carvel bundle containing the builder image, in order to get the
-address of the builder image you must download the carvel bundle and look at the
+This is a carvel bundle containing the configurator image, in order to get the
+address of the configurator image you must download the carvel bundle and look at the
 image lock file within.
 
 ```shell
@@ -56,14 +56,14 @@ kind: ImagesLock
 We want to download the image specified by the `image` key.
 
 ```shell
-$ imgpkg pull -i REGISTRY/REPOSITORY@sha256:0b03767e0526803c055d080a7d378df9adaeaa7cff0ff5af23a2debe668f20e3 -o builder
+$ imgpkg pull -i REGISTRY/REPOSITORY@sha256:0b03767e0526803c055d080a7d378df9adaeaa7cff0ff5af23a2debe668f20e3 -o configurator
 ```
 
-Will output the filesystem of the builder image to a directory called `builder` on your local machine.
+Will output the filesystem of the configurator image to a directory called `configurator` on your local machine.
 
 ## Running a local verdaccio server for inner loop development
 
-Using your extracted builder from the previous step you can run a
+Using your extracted configurator from the previous step you can run a
 [verdaccio](https://verdaccio.org/) server on your machine. This will enable you
 to depend on typescript libraries that the Tanzu Developer Portal has developed
 and are necessary for adding plugins to your Tanzu Developer Portal instance.
@@ -91,7 +91,7 @@ This will enable you to fetch recent metadata and versions from npmjs.com which
 will prevent errors in future steps; such as when installing lerna.
 
 ```shell
-$ cd builder/builder/registry/
+$ cd configurator/builder/registry/
 $ ./start_offline.sh
 ```
 
@@ -107,7 +107,7 @@ If you prefer to see the log lines verdaccio generates then you can run it
 directly without forever.
 
 ```shell
-$ cd builder/builder/registry/
+$ cd configurator/builder/registry/
 $ ./node_modules/verdaccio/bin/verdaccio --config offline_config.yaml
 ```
 
