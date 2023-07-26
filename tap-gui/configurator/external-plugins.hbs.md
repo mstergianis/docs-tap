@@ -594,7 +594,58 @@ info Not revoking login token, specified via config file.
 Done in 2.76s.
 ```
 
-## Adding your plugin wrapper to your portal configuration file
+
+## Issuing your portal configuration file to your Tanzu Application Platform cluster for building
+
+If you're using verdaccio for your publishing you'll need to make sure your
+cluster can access your verdaccio server. This tutorial will not go in to how to
+do that.
+
+### Creating a custom configurator image
+
+The structure of the `configurator` directory is virtually identical to the one
+distributed by VMware with an important difference; your custom plugin wrappers
+have been added to the verdaccio cache. So in order to use these custom plugin
+wrappers while building your customized Tanzu Developer Portal, you will need to
+upload your customized configurator image.
+
+You can push the directory structure of your machine to a OCI image registry.
+```shell
+$ imgpkg push -f configurator/ -i REGISTRY/REPOSITORY
+```
+
+```
+dir: .
+dir: configurator
+# output omitted for brevity ...
+Pushed 'REGISTRY/REPOSITORY@sha256:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'
+Succeeded
+```
+
+> note: It is very important that you run this command from the same directory
+> you ran `imgpkg pull -i
+> REGISTRY/REPOSITORY@sha256:0b03767e0526803c055d080a7d378df9adaeaa7cff0ff5af23a2debe668f20e3
+> -o configurator`. Running from the same directory ensures that your custom
+> configurator image has the same directory structure as the configurator image
+> distributed by VMware.
+
+### Update your workload with your new custom configurator and your updated config file
+
+Update the `source.image` directive with the image output from the last step. Ensure that your
+
+```diff
+--- workload-default.yaml	2023-07-25 10:32:19.447955391 -0400
++++ workload-with-custom-image.yaml	2023-07-25 10:32:34.664804703 -0400
+@@ -18,5 +18,5 @@
+         ENCODED-TDP-CONFIG-VALUE
+
+   source:
+-    image: TDP-IMAGE-LOCATION
++    image: REGISTRY/REPOSITORY@sha256:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+     subPath: builder
+```
+
+Next update your `tpb-config.yaml` to include your custom plugin wrappers.
 
 ```yaml
 app:
@@ -607,10 +658,32 @@ backend:
   plugins:
     - name: '@tpb/plugin-hello-world-backend'
       version: '^1.6.0-release-1.6.x.1'
+    - name: '@mycompany/plugin-techinsights-backend'
+      version: '1.0.0'
 ```
 
-## Issuing your portal configuration file to your Tanzu Application Platform cluster for building
+Run `base64` to encode the file and put it in your workload definition.
 
-If you're using verdaccio for your publishing you'll need to make sure your
-cluster can access your verdaccio server. This tutorial will not go in to how to
-do that.
+```diff
+--- workload-default.yaml	2023-07-25 10:50:24.058132598 -0400
++++ workload-with-custom-tpb-config.yaml	2023-07-25 10:49:59.331114727 -0400
+@@ -14,7 +14,7 @@
+       - name: TPB_CONFIG
+         value: /tmp/tpb-config.yaml
+       - name: TPB_CONFIG_STRING
+-        value: ENCODED-TDP-CONFIG-VALUE
++        value: 'YXBwOgogIHBsdWdpbnM6CiAgICAtIG5hbWU6ICdAdHBiL3BsdWdpbi1oZWxsby13b3JsZCcKICAgICAgdmVyc2lvbjogJ14xLjYuMC1yZWxlYXNlLTEuNi54LjEnCiAgICAtIG5hbWU6ICdAbXljb21wYW55L3BsdWdpbi10ZWNoaW5zaWdodHMnCiAgICAgIHZlcnNpb246ICcxLjAuMCcKYmFja2VuZDoKICBwbHVnaW5zOgogICAgLSBuYW1lOiAnQHRwYi9wbHVnaW4taGVsbG8td29ybGQtYmFja2VuZCcKICAgICAgdmVyc2lvbjogJ14xLjYuMC1yZWxlYXNlLTEuNi54LjEnCiAgICAtIG5hbWU6ICdAbXljb21wYW55L3BsdWdpbi10ZWNoaW5zaWdodHMtYmFja2VuZCcKICAgICAgdmVyc2lvbjogJzEuMC4wJwo='
+
+   source:
+     image: TDP-IMAGE-LOCATION
+```
+
+> note: that your base64 encoded config will differ if you used different names
+> or versions for your custom plugin wrappers
+
+
+#### Apply your workload to the cluster
+
+kubectl apply blah blah blah
+
+#### Watch the progress
