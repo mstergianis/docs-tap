@@ -513,9 +513,327 @@ $ yarn install && yarn tsc && yarn build
 
 ### Tech Insights backend wrapper
 
-<!-- skipping for now because it's getting late on a friday and we're getting tired -->
+<!-- skipping for now because it's getting late on a friday and we're getting
+tired --> We'll also use the backstage cli to create the backend plugin wrapper
+for `tech-insights-backend`.
 
-## Publishing your plugin wrapper
+```shell
+$ yarn backstage-cli new
+```
+
+When asked "What do you want to create?" select "backend-plugin - A new backend plugin".
+
+When asked for "... the ID of the plugin [required]" enter
+"tech-insights-wrapper"
+
+> note: the backstage cli will automatically append `-backend` to the directory
+> name of backend plugins. So this will not conflict with the earlier plugin.
+
+Which should yield output similar to
+
+```
+Creating backend plugin backstage-plugin-tech-insights-wrapper-backend
+
+ Checking Prerequisites:
+  availability  plugins/tech-insights-wrapper-backend ✔
+  creating      temp dir ✔
+
+ Executing Template:
+  copying       .eslintrc.js ✔
+  templating    package.json.hbs ✔
+  templating    README.md.hbs ✔
+  copying       index.ts ✔
+  templating    run.ts.hbs ✔
+  copying       setupTests.ts ✔
+  copying       router.test.ts ✔
+  templating    standaloneServer.ts.hbs ✔
+  copying       router.ts ✔
+
+ Installing:
+  moving        plugins/tech-insights-wrapper-backend ✔
+  executing     yarn install ✔
+  executing     yarn lint --fix ✔
+
+🎉  Successfully created backend-plugin
+
+Done in 110.20s.
+```
+
+We will also be publishing the backend wrapper to an NPM compliant registry.
+
+```diff
+diff --git a/plugins/tech-insights-wrapper-backend/package.json b/plugins/tech-insights-wrapper-backend/package.json
+index 592679a..bb54070 100644
+--- a/plugins/tech-insights-wrapper-backend/package.json
++++ b/plugins/tech-insights-wrapper-backend/package.json
+@@ -1,5 +1,5 @@
+ {
+-  "name": "backstage-plugin-tech-insights-wrapper-backend",
+   +  "name": "@mycompany/tech-insights-wrapper-backend",
+   "version": "0.1.0",
+   "main": "src/index.ts",
+   "types": "src/index.ts",
+```
+
+We also want to update the list of dependencies our package uses, to be the ones
+that our source will actually use. Here's the final state of the file since the
+versions you generate may not match the example
+
+```json
+{
+  "name": "@mycompany/tech-insights-wrapper-backend",
+  "version": "0.1.0",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public",
+    "main": "dist/index.cjs.js",
+    "types": "dist/index.d.ts"
+  },
+  "backstage": {
+    "role": "backend-plugin"
+  },
+  "scripts": {
+    "start": "backstage-cli package start",
+    "build": "backstage-cli package build",
+    "lint": "backstage-cli package lint",
+    "test": "backstage-cli package test",
+    "clean": "backstage-cli package clean",
+    "prepack": "backstage-cli package prepack",
+    "postpack": "backstage-cli package postpack"
+  },
+  "dependencies": {
+    "@backstage/plugin-tech-insights-backend": "^0.5.12",
+    "@backstage/plugin-tech-insights-backend-module-jsonfc": "^0.1.30",
+    "@tpb/core-backend": "1.6.0-release-1.6.x.1",
+    "@types/express": "^4.17.17",
+    "express": "^4.18.2",
+    "express-promise-router": "^4.1.0"
+  },
+  "devDependencies": {
+    "@backstage/cli": "^0.22.6",
+    "eslint": "^8.16.0",
+    "typescript": "~4.6.4"
+  },
+  "files": [
+    "dist"
+  ],
+  "description": "techinsights backend plugin"
+}
+```
+
+```diff
+diff --git a/plugins/tech-insights-wrapper-backend/package.json b/plugins/tech-insights-wrapper-backend/package.json
+index 592679a..0bda5c2 100644
+--- a/plugins/tech-insights-wrapper-backend/package.json
++++ b/plugins/tech-insights-wrapper-backend/package.json
+@@ -1,10 +1,9 @@
+ {
+-  "name": "backstage-plugin-tech-insights-wrapper-backend",
++  "name": "@mycompany/tech-insights-wrapper-backend",
+   "version": "0.1.0",
+   "main": "src/index.ts",
+   "types": "src/index.ts",
+   "license": "Apache-2.0",
+-  "private": true,
+   "publishConfig": {
+     "access": "public",
+     "main": "dist/index.cjs.js",
+@@ -23,22 +22,20 @@
+     "postpack": "backstage-cli package postpack"
+   },
+   "dependencies": {
+-    "@backstage/backend-common": "^0.19.1",
+-    "@backstage/config": "^1.0.8",
+-    "@types/express": "*",
+-    "express": "^4.17.1",
+-    "express-promise-router": "^4.1.0",
+-    "winston": "^3.2.1",
+-    "node-fetch": "^2.6.7",
+-    "yn": "^4.0.0"
++    "@backstage/plugin-tech-insights-backend": "^0.5.12",
++    "@backstage/plugin-tech-insights-backend-module-jsonfc": "^0.1.30",
++    "@tpb/core-backend": "1.6.0-release-1.6.x.1",
++    "@types/express": "^4.17.17",
++    "express": "^4.18.2",
++    "express-promise-router": "^4.1.0"
+   },
+   "devDependencies": {
+-    "@backstage/cli": "^0.22.9",
+-    "@types/supertest": "^2.0.12",
+-    "supertest": "^6.2.4",
+-    "msw": "^1.0.0"
++    "@backstage/cli": "^0.22.6",
++    "eslint": "^8.16.0",
++    "typescript": "~4.6.4"
+   },
+   "files": [
+     "dist"
+-  ]
++  ],
++  "description": "techinsights backend plugin"
+ }
+```
+
+Once again, as with the frontend, we won't be using what backstage scaffolded for us.
+
+```shell
+$ rm -rf dev/ src/ && mkdir src
+```
+
+Then within the `src/` directory we'll create a file called `index.ts`
+
+```shell
+$ cd src/
+$ touch index.ts TechInsightsBackendPlugin.ts
+```
+
+Then in the file `TechInsightsBackendPlugin.ts` add the following content
+
+```ts
+import {
+  createRouter,
+  buildTechInsightsContext,
+  createFactRetrieverRegistration,
+  entityOwnershipFactRetriever,
+  entityMetadataFactRetriever,
+  techdocsFactRetriever,
+} from '@backstage/plugin-tech-insights-backend';
+import {
+  JsonRulesEngineFactCheckerFactory,
+  JSON_RULE_ENGINE_CHECK_TYPE,
+} from '@backstage/plugin-tech-insights-backend-module-jsonfc';
+import {
+  BackendPluginInterface,
+  BackendPluginSurface,
+  PluginEnvironment,
+} from '@tpb/core-backend';
+import { Router } from 'express';
+
+const ttlTwoWeeks = { timeToLive: { weeks: 2 } };
+
+const createPlugin = () => {
+  return async (env: PluginEnvironment): Promise<Router> => {
+    const context = await buildTechInsightsContext({
+      logger: env.logger,
+      config: env.config,
+      database: env.database,
+      discovery: env.discovery,
+      scheduler: env.scheduler,
+      tokenManager: env.tokenManager,
+      factRetrievers: [
+        createFactRetrieverRegistration({
+          cadence: '0 */6 * * *', // Run every 6 hours - https://crontab.guru/#0_*/6_*_*_*
+          factRetriever: entityOwnershipFactRetriever,
+          lifecycle: ttlTwoWeeks,
+        }),
+        createFactRetrieverRegistration({
+          cadence: '0 */6 * * *',
+          factRetriever: entityMetadataFactRetriever,
+          lifecycle: ttlTwoWeeks,
+        }),
+        createFactRetrieverRegistration({
+          cadence: '0 */6 * * *',
+          factRetriever: techdocsFactRetriever,
+          lifecycle: ttlTwoWeeks,
+        }),
+      ],
+      factCheckerFactory: new JsonRulesEngineFactCheckerFactory({
+        logger: env.logger,
+        checks: [
+          {
+            id: 'groupOwnerCheck',
+            type: JSON_RULE_ENGINE_CHECK_TYPE,
+            name: 'Group Owner Check',
+            description:
+              'Verifies that a Group has been set as the owner for this entity',
+            factIds: ['entityOwnershipFactRetriever'],
+            rule: {
+              conditions: {
+                all: [
+                  {
+                    fact: 'hasGroupOwner',
+                    operator: 'equal',
+                    value: true,
+                  },
+                ],
+              },
+            },
+          },
+          {
+            id: 'titleCheck',
+            type: JSON_RULE_ENGINE_CHECK_TYPE,
+            name: 'Title Check',
+            description:
+              'Verifies that a Title, used to improve readability, has been set for this entity',
+            factIds: ['entityMetadataFactRetriever'],
+            rule: {
+              conditions: {
+                all: [
+                  {
+                    fact: 'hasTitle',
+                    operator: 'equal',
+                    value: true,
+                  },
+                ],
+              },
+            },
+          },
+          {
+            id: 'techDocsCheck',
+            type: JSON_RULE_ENGINE_CHECK_TYPE,
+            name: 'TechDocs Check',
+            description:
+              'Verifies that TechDocs has been enabled for this entity',
+            factIds: ['techdocsFactRetriever'],
+            rule: {
+              conditions: {
+                all: [
+                  {
+                    fact: 'hasAnnotationBackstageIoTechdocsRef',
+                    operator: 'equal',
+                    value: true,
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      }),
+    });
+
+    return await createRouter({
+      ...context,
+      logger: env.logger,
+      config: env.config,
+    });
+  };
+};
+
+export const TechInsightsBackendPlugin: BackendPluginInterface =
+  () => surfaces =>
+    surfaces.applyTo(BackendPluginSurface, backendPluginSurface => {
+      backendPluginSurface.addPlugin({
+        name: 'tech-insights',
+        pluginFn: createPlugin(),
+      });
+    });
+```
+
+and in `index.ts` make sure to alias `TechInsightsBackendPlugin` to `plugin`
+
+```ts
+export { TechInsightsBackendPlugin as plugin } from './TechInsightsBackendPlugin';
+```
+
+Now you can build your plugin
+
+```shell
+$ yarn install && yarn tsc && yarn build
+```
+
+## Publishing your plugin wrappers
 
 For this example we'll publish to our local verdaccio server which requires modifying the verdaccio config
 
@@ -563,7 +881,7 @@ packages:
 
 We've added the npm organization `@mycompany/*` to our config with publish access.
 This is because of the names in our package.json files we chose earlier:
-`@mycompany/tech-insights-wrapper` `@mycompany/tech-insights-backend-wrapper`.
+`@mycompany/tech-insights-wrapper` `@mycompany/tech-insights-wrapper-backend`.
 
 Now that authentication has been set up for your verdaccio server you can add your user with `yarn login`
 ```shell
@@ -597,9 +915,9 @@ Done in 2.76s.
 
 ## Issuing your portal configuration file to your Tanzu Application Platform cluster for building
 
-If you're using verdaccio for your publishing you'll need to make sure your
-cluster can access your verdaccio server. This tutorial will not go in to how to
-do that.
+If you're using NPM for publishing you'll need to make sure your cluster can
+access npmjs.com. This tutorial will use verdaccio for publishing and will
+therefore generate a custom builder image that can be used.
 
 ### Creating a custom configurator image
 
@@ -631,7 +949,7 @@ Succeeded
 
 ### Update your workload with your new custom configurator and your updated config file
 
-Update the `source.image` directive with the image output from the last step. Ensure that your
+Update the `source.image` key with the image output from the last step.
 
 ```diff
 --- workload-default.yaml	2023-07-25 10:32:19.447955391 -0400
@@ -652,13 +970,13 @@ app:
   plugins:
     - name: '@tpb/plugin-hello-world'
       version: '^1.6.0-release-1.6.x.1'
-    - name: '@mycompany/plugin-techinsights'
+    - name: '@mycompany/tech-insights-wrapper'
       version: '1.0.0'
 backend:
   plugins:
     - name: '@tpb/plugin-hello-world-backend'
       version: '^1.6.0-release-1.6.x.1'
-    - name: '@mycompany/plugin-techinsights-backend'
+    - name: '@mycompany/tech-insights-wrapper-backend'
       version: '1.0.0'
 ```
 
@@ -672,7 +990,7 @@ Run `base64` to encode the file and put it in your workload definition.
          value: /tmp/tpb-config.yaml
        - name: TPB_CONFIG_STRING
 -        value: ENCODED-TDP-CONFIG-VALUE
-+        value: 'YXBwOgogIHBsdWdpbnM6CiAgICAtIG5hbWU6ICdAdHBiL3BsdWdpbi1oZWxsby13b3JsZCcKICAgICAgdmVyc2lvbjogJ14xLjYuMC1yZWxlYXNlLTEuNi54LjEnCiAgICAtIG5hbWU6ICdAbXljb21wYW55L3BsdWdpbi10ZWNoaW5zaWdodHMnCiAgICAgIHZlcnNpb246ICcxLjAuMCcKYmFja2VuZDoKICBwbHVnaW5zOgogICAgLSBuYW1lOiAnQHRwYi9wbHVnaW4taGVsbG8td29ybGQtYmFja2VuZCcKICAgICAgdmVyc2lvbjogJ14xLjYuMC1yZWxlYXNlLTEuNi54LjEnCiAgICAtIG5hbWU6ICdAbXljb21wYW55L3BsdWdpbi10ZWNoaW5zaWdodHMtYmFja2VuZCcKICAgICAgdmVyc2lvbjogJzEuMC4wJwo='
++        value: 'YXBwOgogIHBsdWdpbnM6CiAgICAtIG5hbWU6ICdAdHBiL3BsdWdpbi1oZWxsby13b3JsZCcKICAgICAgdmVyc2lvbjogJ14xLjYuMC1yZWxlYXNlLTEuNi54LjEnCiAgICAtIG5hbWU6ICdAbXljb21wYW55L3RlY2gtaW5zaWdodHMtd3JhcHBlcicKICAgICAgdmVyc2lvbjogJzEuMC4wJwpiYWNrZW5kOgogIHBsdWdpbnM6CiAgICAtIG5hbWU6ICdAdHBiL3BsdWdpbi1oZWxsby13b3JsZC1iYWNrZW5kJwogICAgICB2ZXJzaW9uOiAnXjEuNi4wLXJlbGVhc2UtMS42LnguMScKICAgIC0gbmFtZTogJ0BteWNvbXBhbnkvdGVjaC1pbnNpZ2h0cy13cmFwcGVyLWJhY2tlbmQnCiAgICAgIHZlcnNpb246ICcxLjAuMCcK'
 
    source:
      image: TDP-IMAGE-LOCATION
