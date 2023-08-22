@@ -22,6 +22,8 @@ The steps include:
 > However, if you decide you want to hide them, you can use the
 > [runtime configuration](concepts.hbs.md#runtime) options in your `tap-values.yaml` file.
 
+> Note: throughout this doc it will be assumed that node 16 is being used.
+
 ## Extracting the contents of the configurator image
 
 Find the location of the configurator image by querying your TAP cluster
